@@ -1,6 +1,5 @@
-package com.example.recipe_app
-
+package com.MTH.recipeApp
 import io.flutter.embedding.android.FlutterActivity
-
+ 
 class MainActivity: FlutterActivity() {
 }

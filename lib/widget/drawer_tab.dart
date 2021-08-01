@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:meals/screens/add_meal_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../providers/settings.dart';
 import '../screens/my_recipes_screen.dart';
-import '../providers/auth.dart';
+
 
 class DrawerTab extends StatefulWidget {
   static const routeName = 'drawer';
@@ -15,6 +15,7 @@ class DrawerTab extends StatefulWidget {
 
 class _DrawerTabState extends State<DrawerTab> {
   bool _isEng;
+  final _auth=FirebaseAuth.instance;
   Widget buildListTile(
       {IconData icon,
       String title,
@@ -33,7 +34,7 @@ class _DrawerTabState extends State<DrawerTab> {
       onTap: onTapHandler,
     );
   }
-
+  
   void onLangSwitch(LanguageSettings lang, [bool value]) {
     setState(() {
       _isEng = !_isEng;
@@ -44,7 +45,7 @@ class _DrawerTabState extends State<DrawerTab> {
 
   @override
   Widget build(BuildContext context) {
-    final languageSettings = Provider.of<LanguageSettings>(context);
+    final languageSettings = Provider.of<LanguageSettings>(context,listen:false);
     final Map<String, String> langMap = languageSettings.getWords(
       DrawerTab.routeName,
     );
@@ -61,6 +62,7 @@ class _DrawerTabState extends State<DrawerTab> {
                   style: TextStyle(
                       fontFamily: 'ArefRuqaa',
                       fontSize: 25,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold)),
             ),
           ]),
@@ -74,9 +76,9 @@ class _DrawerTabState extends State<DrawerTab> {
           ),
           buildListTile(
             icon: Icons.add,
-            title: langMap['add recpie'],
+            title: langMap['my recpie'],
             onTapHandler: () => Navigator.of(context)
-                .pushReplacementNamed(AddMealScreen.routeName),
+                .pushNamed(MyRecipes.routeName),
           ),
           buildListTile(
             icon: Icons.language,
@@ -89,7 +91,7 @@ class _DrawerTabState extends State<DrawerTab> {
           ),
           buildListTile(
             icon: Icons.exit_to_app_rounded,
-            title: 'logOut',
+            title: langMap['Sign Out'],
             onTapHandler: () => _logOut(),
           ),
         ],
@@ -98,7 +100,7 @@ class _DrawerTabState extends State<DrawerTab> {
   }
 
   void _logOut() {
-    Provider.of<Auth>(context, listen: false).logout();
+    _auth.signOut();
     Navigator.of(context).pushReplacementNamed('/');
   }
 }

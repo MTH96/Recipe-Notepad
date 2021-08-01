@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 
 enum Complexity {
   Simple, //0
@@ -12,22 +16,26 @@ enum Affordability {
   Luxurious, //2
 }
 
-class Recipe with ChangeNotifier {
+class Recipe {
   String id;
-  String creatorId;
+  String creatorID;
   List<String> categories;
   String title;
   String imageUrl;
+  File image;//for offline handling only uploading to fire storage
   List<String> ingredients;
   List<String> steps;
   int duration;
   Complexity complexity;
   Affordability affordability;
-  bool isFavorite;
+  List<String> favoriteList;
+  int favLength;
+  String imageName;
 
   Recipe({
     this.id,
-    this.creatorId,
+    this.creatorID,
+    @required this.image,
     @required this.categories,
     @required this.title,
     @required this.imageUrl,
@@ -36,47 +44,31 @@ class Recipe with ChangeNotifier {
     @required this.duration,
     @required this.complexity,
     @required this.affordability,
-    this.isFavorite = false,
+    this.favoriteList = const [],
+    this.favLength = 0,
+    this.imageName=''
   });
 
-  // void toggleFavorite() async {
-  //   final SharedPreferences pref = await SharedPreferences.getInstance();
-
-  //   List<String> favData = pref.getStringList('fav');
-  //   if (favData != null) {
-  //     if (favData.contains(id)) {
-  //       //if the data has this item as a favorite
-  //       favData.remove(id);
-  //     } else {
-  //       //if the data hasn't this item as a favorite
-  //       //then add
-  //       favData.add(id);
-  //     }
-  //     pref.setStringList('fav', favData);
-  //   } else {
-  //     //if there is no favorites at all
-  //     //then creat one
-  //     List<String> favData = [];
-  //     favData.add(id);
-  //     pref.setStringList('fav', favData);
-  //   }
-  //   isFavorite = !isFavorite;
-  //   print(isFavorite);
-  //   notifyListeners();
-  // }
-
-  Map<String, dynamic> recipeTojson(String userId) {
-    return {
-      'title': this.title,
-      'imageUrl': this.imageUrl,
-      'ingredients': this.ingredients,
-      'steps': this.steps,
-      'duration': this.duration,
-      'complexity': getComlexity(this.complexity),
-      'affordability': getAfford(this.affordability),
-      'categories': this.categories,
-      'creatorId': userId,
-    };
+  void toggleFavorite() async {
+    List<String> favData = favoriteList;
+    int favLen=favLength;
+    try {
+      if (favData.contains(FirebaseAuth.instance.currentUser.uid)) {
+        //if the data has this item as a favorite
+        favData.remove(FirebaseAuth.instance.currentUser.uid);
+        favLen -= 1;
+      } else {
+        //if the data has this item as a favorite
+        favData.add(FirebaseAuth.instance.currentUser.uid);
+         favLen += 1;
+      }
+      FirebaseFirestore.instance
+          .collection('Recipes')
+          .doc(id)
+          .update({'fav': favData, 'favLength': favLen});
+    } catch (error) {
+      throw error;
+    }
   }
 
   static int getComlexity(Complexity com) {
@@ -89,7 +81,6 @@ class Recipe with ChangeNotifier {
         return 2;
 
       default:
-        print('error');
         return -1;
     }
   }
@@ -104,7 +95,6 @@ class Recipe with ChangeNotifier {
         return Complexity.Hard;
 
       default:
-        print('error');
         return Complexity.Simple;
     }
   }
@@ -119,7 +109,6 @@ class Recipe with ChangeNotifier {
         return 2;
 
       default:
-        print('error');
         return -1;
     }
   }
@@ -134,22 +123,44 @@ class Recipe with ChangeNotifier {
         return Affordability.Luxurious;
 
       default:
-        print('error');
         return Affordability.Affordable;
     }
   }
 }
 
+Map<String, dynamic> recipeTojson(Recipe recipe) {
+  return {
+    'title': recipe.title,
+    'imageUrl': recipe.imageUrl,
+    'ingredients': recipe.ingredients,
+    'steps': recipe.steps,
+    'duration': recipe.duration,
+    'complexity': Recipe.getComlexity(recipe.complexity),
+    'affordability': Recipe.getAfford(recipe.affordability),
+    'categories': recipe.categories,
+    'creatorId': FirebaseAuth.instance.currentUser.uid,
+    'fav': recipe.favoriteList,
+    'favLength': recipe.favLength,
+    'imageName':recipe.imageName,
+  };
+}
+
 Recipe createRecipe(String recipeId, Map recipeData) {
+ 
   return Recipe(
-      id: recipeId,
-      title: recipeData['title'],
-      affordability: Recipe.setAfford(recipeData['affordability'] as int),
-      complexity: Recipe.setComlexity(recipeData['complexity'] as int),
-      imageUrl: recipeData['imageUrl'] as String,
-      duration: recipeData['duration'],
-      steps: [...recipeData['steps']],
-      ingredients: [...recipeData['ingredients']],
-      categories: [...recipeData['categories']],
-      creatorId: recipeData['creatorId']);
+    id: recipeId,
+    title: recipeData['title'],
+    affordability: Recipe.setAfford(recipeData['affordability'] as int),
+    complexity: Recipe.setComlexity(recipeData['complexity'] as int),
+    image: recipeData['image'],
+    imageUrl: recipeData['imageUrl'] as String,
+    duration: recipeData['duration'],
+    steps: [...recipeData['steps']],
+    ingredients: [...recipeData['ingredients']],
+    categories: [...recipeData['categories']],
+    creatorID: recipeData['creatorId'],
+    favoriteList: [...recipeData['fav']],
+    favLength: recipeData['favLength'],
+    imageName: recipeData['imageName'],
+  );
 }

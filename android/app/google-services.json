@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "209640957883-vhbpo58016lqrm8t10lfbfp5f4e9t21u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.MTH.recipeApp",
+            "certificate_hash": "6b091a19dfe716311f8fc70ab68e62f56f2a132b"
+          }
+        },
+        {
           "client_id": "209640957883-9kvq1aamp0mtsh4g8f4oiqvbbaofguhc.apps.googleusercontent.com",
           "client_type": 3
         }

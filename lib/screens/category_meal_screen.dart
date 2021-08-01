@@ -1,21 +1,26 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:meals/providers/settings.dart';
+import 'package:meals/screens/add_recipe_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../widget/recipe_item.dart';
 import '../models/recipe.dart';
-import '../providers/recipes.dart';
 
 class CategoryMealsScreen extends StatelessWidget {
   static const routeName = '/category-meals';
+
+  void addRecipe(BuildContext ctx,catId) {
+    Navigator.of(ctx).pushNamed(AddMealScreen.routeName, arguments: {'add':catId});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final meals = Provider.of<Recipes>(context);
-
     final routeArgs =
-        ModalRoute.of(context).settings.arguments as Map<String, String>;
+        ModalRoute.of(context).settings.arguments as Map<String, dynamic>;
     final categoryTitle = routeArgs['title'];
-    final categoryId = routeArgs['id'];
-    final List<Recipe> categoryMeals = meals.mealsByCat(categoryId);
+    final String categoryId = routeArgs['id'];
+    final langMap=Provider.of<LanguageSettings>(context,listen:false).getWords(CategoryMealsScreen.routeName);
 
     return Scaffold(
       appBar: AppBar(
@@ -23,15 +28,28 @@ class CategoryMealsScreen extends StatelessWidget {
           categoryTitle,
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () => meals.getRecipes(),
-        child: ListView.builder(
-          itemBuilder: (ctx, index) => ChangeNotifierProvider.value(
-            value: categoryMeals[index],
-            child: MealItem(),
-          ),
-          itemCount: categoryMeals.length,
-        ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('Recipes')
+              .where('categories', arrayContains: categoryId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting)
+              return Center(child: CircularProgressIndicator());
+            if (snapshot.data.docs.isEmpty)
+              return Center(child: Text(langMap['noRecipe']));
+
+            final docs = snapshot.data.docs;
+
+            return ListView.builder(
+              itemBuilder: (ctx, index) =>
+                  RecipeItem(createRecipe(docs[index].id, docs[index].data())),
+              itemCount: docs.length,
+            );
+          }),
+           floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () =>addRecipe(context, categoryId)
       ),
     );
   }

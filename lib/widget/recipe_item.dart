@@ -1,40 +1,46 @@
-import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:meals/providers/settings.dart';
+import 'package:meals/screens/add_recipe_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../screens/meal_screen.dart';
 import '../models/recipe.dart';
 
-class MealItem extends StatelessWidget {
+class RecipeItem extends StatelessWidget {
+  RecipeItem(this.recipe);
+  final Recipe recipe;
+  Map<String, String> langMap;
+
   String complexityText(Complexity complexity) {
     switch (complexity) {
       case Complexity.Challenging:
-        return 'challenging';
+        return langMap['Challenging'];
         break;
       case Complexity.Hard:
-        return 'hard';
+        return langMap['Hard'];
         break;
       case Complexity.Simple:
-        return 'simple';
+        return langMap['Simple'];
         break;
       default:
-        return 'unknown';
+        return langMap['unknown'];
     }
   }
 
   String affordabilityText(Affordability affordability) {
     switch (affordability) {
       case Affordability.Affordable:
-        return 'affordable';
+        return langMap['Affordable'];
         break;
       case Affordability.Luxurious:
-        return 'luxurious';
+        return langMap['Luxurious'];
         break;
       case Affordability.Pricey:
-        return 'pricey';
+        return langMap['Pricey'];
         break;
       default:
-        return 'unknown';
+        return langMap['unknown'];
     }
   }
 
@@ -44,11 +50,12 @@ class MealItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final meal = Provider.of<Recipe>(context);
+    langMap = Provider.of<LanguageSettings>(context,listen:false)
+        .getWords(AddMealScreen.routeName);
     return InkWell(
       splashColor: Theme.of(context).primaryColor,
       radius: 15,
-      onTap: () => selectedMeal(context, meal.id),
+      onTap: () => selectedMeal(context, recipe.id),
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
@@ -64,7 +71,7 @@ class MealItem extends StatelessWidget {
                     topRight: Radius.circular(15),
                   ),
                   child: Image.network(
-                    meal.imageUrl,
+                    recipe.imageUrl,
                     height: 250,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -74,11 +81,11 @@ class MealItem extends StatelessWidget {
                   bottom: 20,
                   right: 0,
                   child: Container(
-                    padding: EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(10),
                     width: 200,
                     color: Colors.black54,
                     child: Text(
-                      meal.title,
+                      recipe.title,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -95,18 +102,27 @@ class MealItem extends StatelessWidget {
                   left: 0,
                   child: GestureDetector(
                     onTap: () {
-                      // meal.toggleFavorite();
-                      // print(meal.isFavorite);
+                      recipe.toggleFavorite();
                     },
                     child: Container(
-                      padding: EdgeInsets.all(5),
+                      padding: const EdgeInsets.all(5),
                       color: Colors.black54,
-                      child: Icon(
-                        meal.isFavorite
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: Colors.yellow,
-                        size: 40,
+                      child: Column(
+                        children: [
+                          Icon(
+                            recipe.favoriteList.contains(
+                                    FirebaseAuth.instance.currentUser.uid)
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: Colors.yellow,
+                            size: 40,
+                          ),
+                          Text(
+                            recipe.favoriteList.length.toString(),
+                            style: TextStyle(
+                                color: Theme.of(context).primaryColor),
+                          )
+                        ],
                       ),
                     ),
                   ),
@@ -114,25 +130,36 @@ class MealItem extends StatelessWidget {
               ],
             ),
             Container(
-                height: 50,
                 width: double.infinity,
-                padding: EdgeInsets.all(10),
-                child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Info(
-                        icon: Icons.schedule,
-                        info: '${meal.duration} min',
-                      ),
-                      Info(
-                        icon: Icons.work,
-                        info: '${complexityText(meal.complexity)}',
-                      ),
-                      Info(
+                padding: const EdgeInsets.all(10),
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        FittedBox(
+                          child: Info(
+                            icon: Icons.schedule,
+                            info: '${recipe.duration} ${langMap['min']}',
+                          ),
+                        ),
+                        FittedBox(
+                          child: Info(
+                            icon: Icons.work,
+                            info: '${complexityText(recipe.complexity)}',
+                          ),
+                        ),
+                      ],
+                    ),
+                    FittedBox(
+                      child: Info(
                         icon: Icons.attach_money,
-                        info: '${affordabilityText(meal.affordability)} ',
+                        info: '${affordabilityText(recipe.affordability)} ',
                       ),
-                    ]))
+                    ),
+                  ],
+                ))
           ],
         ),
       ),
@@ -154,7 +181,6 @@ class Info extends StatelessWidget {
         ),
         Text(
           info,
-          style: Theme.of(context).textTheme.bodyText1,
         ),
       ],
     );

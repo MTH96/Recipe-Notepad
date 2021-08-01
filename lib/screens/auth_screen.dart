@@ -1,8 +1,17 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings.dart';
-import '../providers/auth.dart';
+
+GoogleSignIn _googleSignIn = GoogleSignIn(
+  scopes: [
+    'email',
+    'https://www.googleapis.com/auth/admin.directory.customer.readonly',
+  ],
+);
 
 class AuthScreen extends StatefulWidget {
   static const routeName = '/auth-screen';
@@ -11,24 +20,73 @@ class AuthScreen extends StatefulWidget {
   _AuthScreenState createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen>
-    with SingleTickerProviderStateMixin {
+class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading = false;
 
   Map<String, String> langMap;
   Map<String, dynamic> _isEng = {'text': 'eng', 'value': true};
+  Future<void> signInWithGoogle() async {
+    final _auth = FirebaseAuth.instance;
+
+    try {
+      // Trigger the authentication flow
+      final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      await _auth.signInWithCredential(credential);
+
+      Map<String, dynamic> userData = {
+        'userId': _auth.currentUser.uid,
+        'userName': _auth.currentUser.displayName,
+        'userPhoto': _auth.currentUser.photoURL,
+        'userEmail': _auth.currentUser.email,
+      };
+      // Once signed in, return the UserCredential
+      await FirebaseFirestore.instance
+          .collection('userInfo')
+          .doc(_auth.currentUser.uid)
+          .set(
+            userData,
+          );
+    } catch (e) {
+      print("error: ${e.toString()}");
+      throw e;
+    }
+  }
 
   void _submitData() async {
     setState(() {
       _isLoading = true;
     });
-
-    await Provider.of<Auth>(context, listen: false).signInWithGoogle();
-    Navigator.of(context).pushReplacementNamed('/');
-
-    setState(() {
-      _isLoading = false;
-    });
+    try {
+      await signInWithGoogle();
+      Navigator.of(context).pushReplacementNamed('/');
+    } catch (error) {
+      print("error: ${error.toString()}");
+      setState(() {
+        _isLoading = false;
+      });
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(langMap['error']),
+          content: Text(langMap['errMsg']),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(ctx).pop(), child: Text('OK'))
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -36,12 +94,13 @@ class _AuthScreenState extends State<AuthScreen>
     final langSettings = Provider.of<LanguageSettings>(context);
     langMap = langSettings.getWords(AuthScreen.routeName);
     _isEng['value'] = langSettings.isEng;
+    _isEng['text'] = langSettings.isEng ? 'eng' : 'ara';
 
     return Scaffold(
       body: Stack(
         children: [
           Container(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               gradient: LinearGradient(

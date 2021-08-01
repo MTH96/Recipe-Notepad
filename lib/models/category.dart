@@ -1,17 +1,40 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 class Category {
   final String id;
-  final String titleAR;
-  final String titleEN;
-  final Color color;
-  final int index;
+   String title;
+   String imageUrl;
+   String imageName;
+   File image;
+  
 
-  const Category({
-    @required this.id,
-    @required this.titleAR,
-    @required this.titleEN,
-    this.color = Colors.orange,
-    this.index,
+   Category({
+     this.id,
+    @required this.title,
+   @required   this.imageUrl ,
+   this.image,
+   this.imageName='',
+ 
   });
+}
+
+Map<String, dynamic> categoryToMap(Category category) {
+  return {
+    'id': category.id,
+    'title': category.title,
+     'imageUrl': category.imageUrl,
+     'imageName':category.imageName,
+  };
+}
+
+Category mapToCategory(String categryId,Map<String, dynamic> categoryData) {
+
+  return Category(
+    id: categryId,
+    title: categoryData['title'],
+    imageUrl: categoryData['imageUrl'],
+    imageName: categoryData['imageName'],
+  );
 }
