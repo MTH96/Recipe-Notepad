@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "209640957883",
+    "firebase_url": "https://meals-ceb8c-default-rtdb.firebaseio.com",
+    "project_id": "meals-ceb8c",
+    "storage_bucket": "meals-ceb8c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:209640957883:android:4ccf71ff51d41611c7869e",
+        "android_client_info": {
+          "package_name": "com.MTH.recipeApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "209640957883-9kvq1aamp0mtsh4g8f4oiqvbbaofguhc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCe28J-SY0bpllo2b_k5iI7aS4TiAp1Xak"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "209640957883-9kvq1aamp0mtsh4g8f4oiqvbbaofguhc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
